@@ -8,6 +8,7 @@ gzip true
 
 REFRESH_INTERVAL = (ENV["REFRESH_INTERVAL"]? || 30).to_i
 GROUPS = parse_groups(ENV["CS_GROUPS"]? || "{}")
+PIPELINES = parse_groups(ENV["PIPELINES"]? || "{}")
 
 def setup(env)
   refresh_interval = REFRESH_INTERVAL
@@ -42,6 +43,10 @@ def process(data, ignore_groups)
   statuses = MyData.statuses(data)
 end
 
+def show_only(data, keyword)
+  statuses = MyData.status_with(data, keyword)
+end
+
 get "/giphy/:q" do |env|
   src = giphy(env.params.url["q"])
   "<img src='#{src}'>"
@@ -68,6 +73,8 @@ get "/jobs/match/:keyword/:host/**" do |env|
 
   data = MyData.get_data(host, username, password, nil, login_form, team_name)
   jobs = data.map do |pipeline,job|
+    puts "#{pipeline}"
+    puts "#{job}"
     JobInfo.new(pipeline, job)
   end.select do |info|
     info.name.includes? keyword
@@ -81,7 +88,7 @@ get "/host/:host/**" do |env|
   host = env.params.url["host"]
 
   data = MyData.get_data(host, username, password, nil, login_form, team_name)
-  statuses = process(data, ignore_groups)
+  statuses = show_only(data, PIPELINES)
 
   if env.params.query.has_key?("giphy")
     q = env.params.query["giphy"].to_s

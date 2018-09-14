@@ -101,6 +101,28 @@ class MyData
     hash.values
   end
 
+  def self.status_with(data : Array(Tuple(Pipeline, Job)), keywords)
+    hash = Hash(Tuple(String, String | Nil), MyData).new do |_, key|
+      pipeline_name, group = key
+      MyData.new(pipeline_name, group)
+    end
+    data.each do |pipeline, job|
+      if keywords.any? { |word| pipeline.name.match(/"#{word}"/) }
+        job.groups.each do |group|
+          key = {pipeline.name, group}
+          data = hash[key]
+          data.paused = pipeline.paused
+          data.pipeline_url = pipeline.url
+          data.running ||= job.running
+          data.broken_resource = job.broken
+          data.inc(job.status || "pending")
+          hash[key] = data
+        end
+      end
+    end
+    hash.values
+  end
+
   def to_json(json : JSON::Builder)
     json.object do
       json.field "pipeline", @pipeline || nil
