@@ -8,7 +8,7 @@ gzip true
 
 REFRESH_INTERVAL = (ENV["REFRESH_INTERVAL"]? || 30).to_i
 GROUPS = parse_groups(ENV["CS_GROUPS"]? || "{}")
-PIPELINES = parse_groups(ENV["PIPELINES"]? || "{}")
+PIPELINES = parse_groups(ENV["PIPELINES"]? || "{}").split(',')
 
 def setup(env)
   refresh_interval = REFRESH_INTERVAL
@@ -88,6 +88,7 @@ get "/host/:host/**" do |env|
   host = env.params.url["host"]
 
   data = MyData.get_data(host, username, password, nil, login_form, team_name)
+  puts PIPELINES
   statuses = show_only(data, PIPELINES)
 
   if env.params.query.has_key?("giphy")
